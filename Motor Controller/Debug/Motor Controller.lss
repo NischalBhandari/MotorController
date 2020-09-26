@@ -3,25 +3,25 @@ Motor Controller.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         00000088  00000000  00000000  00000074  2**1
+  0 .text         00000120  00000000  00000000  00000074  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000000  00800060  00000088  000000fc  2**0
+  1 .data         00000000  00800060  00000120  00000194  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .comment      00000030  00000000  00000000  000000fc  2**0
+  2 .comment      00000030  00000000  00000000  00000194  2**0
                   CONTENTS, READONLY
-  3 .debug_aranges 00000020  00000000  00000000  0000012c  2**0
+  3 .debug_aranges 00000020  00000000  00000000  000001c4  2**0
                   CONTENTS, READONLY, DEBUGGING
-  4 .debug_info   0000009d  00000000  00000000  0000014c  2**0
+  4 .debug_info   00000231  00000000  00000000  000001e4  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .debug_abbrev 00000069  00000000  00000000  000001e9  2**0
+  5 .debug_abbrev 000000d3  00000000  00000000  00000415  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_line   000000bb  00000000  00000000  00000252  2**0
+  6 .debug_line   000001bd  00000000  00000000  000004e8  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_frame  00000024  00000000  00000000  00000310  2**2
+  7 .debug_frame  00000024  00000000  00000000  000006a8  2**2
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_str    0000013f  00000000  00000000  00000334  2**0
+  8 .debug_str    0000018a  00000000  00000000  000006cc  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_ranges 00000010  00000000  00000000  00000473  2**0
+  9 .debug_ranges 00000010  00000000  00000000  00000856  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -57,7 +57,7 @@ Disassembly of section .text:
   5c:	de bf       	out	0x3e, r29	; 62
   5e:	cd bf       	out	0x3d, r28	; 61
   60:	0e 94 36 00 	call	0x6c	; 0x6c <main>
-  64:	0c 94 42 00 	jmp	0x84	; 0x84 <_exit>
+  64:	0c 94 8e 00 	jmp	0x11c	; 0x11c <_exit>
 
 00000068 <__bad_interrupt>:
   68:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
@@ -68,8 +68,8 @@ Disassembly of section .text:
 
 int main(void)
 {	//Making DDRC output
-	DDRC = 0b00000011;
-  6c:	83 e0       	ldi	r24, 0x03	; 3
+	DDRC = 0b00111111;
+  6c:	8f e3       	ldi	r24, 0x3F	; 63
   6e:	84 bb       	out	0x14, r24	; 20
 	// Making DDRB PIN3 an Input
 	// << means shift left 10001111 << 4 bits will produce 11110000
@@ -80,30 +80,118 @@ int main(void)
   70:	17 ba       	out	0x17, r1	; 23
 	
     while(1)
-    { int btn = (PINB & (1 << btn_pin) ) >> btn_pin;
-		if(btn){
-  72:	b3 9b       	sbis	0x16, 3	; 22
-  74:	04 c0       	rjmp	.+8      	; 0x7e <main+0x12>
-			//setting the bit
-			
-			PORTC |= 0b00000011;
+    
+	{	PORTC |= 0b00000000;
+  72:	85 b3       	in	r24, 0x15	; 21
+  74:	85 bb       	out	0x15, r24	; 21
+		PORTC |=0b00100001;
   76:	85 b3       	in	r24, 0x15	; 21
-  78:	83 60       	ori	r24, 0x03	; 3
+  78:	81 62       	ori	r24, 0x21	; 33
   7a:	85 bb       	out	0x15, r24	; 21
-  7c:	fa cf       	rjmp	.-12     	; 0x72 <main+0x6>
-			//PORTC  = (1 << led_pin) | PORTC;
-			//PORTC = (1 << Q2) | PORTC;
-        //TODO:: Please write your application code 
-    }
-	else{
-		PORTC =~(1 << led_pin) & PORTC;
-  7e:	a8 98       	cbi	0x15, 0	; 21
-		PORTC =~(1 << Q2) & PORTC; 
-  80:	a9 98       	cbi	0x15, 1	; 21
-  82:	f7 cf       	rjmp	.-18     	; 0x72 <main+0x6>
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
 
-00000084 <_exit>:
-  84:	f8 94       	cli
+	__builtin_avr_delay_cycles(__ticks_dc);
+  7c:	2f eb       	ldi	r18, 0xBF	; 191
+  7e:	87 e2       	ldi	r24, 0x27	; 39
+  80:	99 e0       	ldi	r25, 0x09	; 9
+  82:	21 50       	subi	r18, 0x01	; 1
+  84:	80 40       	sbci	r24, 0x00	; 0
+  86:	90 40       	sbci	r25, 0x00	; 0
+  88:	e1 f7       	brne	.-8      	; 0x82 <main+0x16>
+  8a:	00 c0       	rjmp	.+0      	; 0x8c <main+0x20>
+  8c:	00 00       	nop
+		_delay_ms(3000);
+		PORTC &= (0b00000000);
+  8e:	85 b3       	in	r24, 0x15	; 21
+  90:	15 ba       	out	0x15, r1	; 21
+		PORTC |= 0b00001001;
+  92:	85 b3       	in	r24, 0x15	; 21
+  94:	89 60       	ori	r24, 0x09	; 9
+  96:	85 bb       	out	0x15, r24	; 21
+  98:	2f eb       	ldi	r18, 0xBF	; 191
+  9a:	87 e2       	ldi	r24, 0x27	; 39
+  9c:	99 e0       	ldi	r25, 0x09	; 9
+  9e:	21 50       	subi	r18, 0x01	; 1
+  a0:	80 40       	sbci	r24, 0x00	; 0
+  a2:	90 40       	sbci	r25, 0x00	; 0
+  a4:	e1 f7       	brne	.-8      	; 0x9e <main+0x32>
+  a6:	00 c0       	rjmp	.+0      	; 0xa8 <main+0x3c>
+  a8:	00 00       	nop
+		_delay_ms(3000);
+		PORTC &= 0b00000000;
+  aa:	85 b3       	in	r24, 0x15	; 21
+  ac:	15 ba       	out	0x15, r1	; 21
+		PORTC |= 0b00011000;
+  ae:	85 b3       	in	r24, 0x15	; 21
+  b0:	88 61       	ori	r24, 0x18	; 24
+  b2:	85 bb       	out	0x15, r24	; 21
+  b4:	2f eb       	ldi	r18, 0xBF	; 191
+  b6:	87 e2       	ldi	r24, 0x27	; 39
+  b8:	99 e0       	ldi	r25, 0x09	; 9
+  ba:	21 50       	subi	r18, 0x01	; 1
+  bc:	80 40       	sbci	r24, 0x00	; 0
+  be:	90 40       	sbci	r25, 0x00	; 0
+  c0:	e1 f7       	brne	.-8      	; 0xba <main+0x4e>
+  c2:	00 c0       	rjmp	.+0      	; 0xc4 <main+0x58>
+  c4:	00 00       	nop
+		_delay_ms(3000);
+		PORTC &= 0b00000000;
+  c6:	85 b3       	in	r24, 0x15	; 21
+  c8:	15 ba       	out	0x15, r1	; 21
+		PORTC |= 0b00010010;
+  ca:	85 b3       	in	r24, 0x15	; 21
+  cc:	82 61       	ori	r24, 0x12	; 18
+  ce:	85 bb       	out	0x15, r24	; 21
+  d0:	2f eb       	ldi	r18, 0xBF	; 191
+  d2:	87 e2       	ldi	r24, 0x27	; 39
+  d4:	99 e0       	ldi	r25, 0x09	; 9
+  d6:	21 50       	subi	r18, 0x01	; 1
+  d8:	80 40       	sbci	r24, 0x00	; 0
+  da:	90 40       	sbci	r25, 0x00	; 0
+  dc:	e1 f7       	brne	.-8      	; 0xd6 <main+0x6a>
+  de:	00 c0       	rjmp	.+0      	; 0xe0 <main+0x74>
+  e0:	00 00       	nop
+		_delay_ms(3000);
+		PORTC &= 0b00000000;
+  e2:	85 b3       	in	r24, 0x15	; 21
+  e4:	15 ba       	out	0x15, r1	; 21
+		PORTC |= 0b00000110;
+  e6:	85 b3       	in	r24, 0x15	; 21
+  e8:	86 60       	ori	r24, 0x06	; 6
+  ea:	85 bb       	out	0x15, r24	; 21
+  ec:	2f eb       	ldi	r18, 0xBF	; 191
+  ee:	87 e2       	ldi	r24, 0x27	; 39
+  f0:	99 e0       	ldi	r25, 0x09	; 9
+  f2:	21 50       	subi	r18, 0x01	; 1
+  f4:	80 40       	sbci	r24, 0x00	; 0
+  f6:	90 40       	sbci	r25, 0x00	; 0
+  f8:	e1 f7       	brne	.-8      	; 0xf2 <main+0x86>
+  fa:	00 c0       	rjmp	.+0      	; 0xfc <main+0x90>
+  fc:	00 00       	nop
+		_delay_ms(3000);
+		PORTC &= 0b00000000;
+  fe:	85 b3       	in	r24, 0x15	; 21
+ 100:	15 ba       	out	0x15, r1	; 21
+		PORTC |= 0b00100100;
+ 102:	85 b3       	in	r24, 0x15	; 21
+ 104:	84 62       	ori	r24, 0x24	; 36
+ 106:	85 bb       	out	0x15, r24	; 21
+ 108:	2f eb       	ldi	r18, 0xBF	; 191
+ 10a:	87 e2       	ldi	r24, 0x27	; 39
+ 10c:	99 e0       	ldi	r25, 0x09	; 9
+ 10e:	21 50       	subi	r18, 0x01	; 1
+ 110:	80 40       	sbci	r24, 0x00	; 0
+ 112:	90 40       	sbci	r25, 0x00	; 0
+ 114:	e1 f7       	brne	.-8      	; 0x10e <main+0xa2>
+ 116:	00 c0       	rjmp	.+0      	; 0x118 <main+0xac>
+ 118:	00 00       	nop
+ 11a:	ab cf       	rjmp	.-170    	; 0x72 <main+0x6>
 
-00000086 <__stop_program>:
-  86:	ff cf       	rjmp	.-2      	; 0x86 <__stop_program>
+0000011c <_exit>:
+ 11c:	f8 94       	cli
+
+0000011e <__stop_program>:
+ 11e:	ff cf       	rjmp	.-2      	; 0x11e <__stop_program>
